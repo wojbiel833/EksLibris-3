@@ -1,10 +1,10 @@
 import {
   ifPopulationsHaveChanged,
   checkIfDataExpired,
-  getCountriesEU,
-  getCountriesWithoutA,
-  sortCountriesByPopulation,
-  sumTheBiggestCountries,
+  getCountriesFrom,
+  getCountriesWithoutLetter,
+  sortCountriesByParameter,
+  sumTheBiggestPopulations,
 } from "./index";
 
 import { Country } from "./interfaces";
@@ -79,32 +79,28 @@ const peru = {
 
 const countries: Country[] = [austria, peru, poland];
 
-describe("getCountriesEU", () => {
-  it("returns right output with test data", () => {
-    expect(getCountriesEU(countries)).toEqual([austria, poland]);
+describe("getCountriesFrom", () => {
+  it("returns countries that are in EU", () => {
+    expect(getCountriesFrom(countries)).toEqual([austria, poland]);
   });
 });
 
-describe("getCountriesWithoutA", () => {
-  it("returns right output with test data", () => {
-    expect(getCountriesWithoutA(countries)).toEqual([peru]);
+describe("getCountriesWithoutLetter", () => {
+  it("returns countries witout 'a' n the name", () => {
+    expect(getCountriesWithoutLetter(countries)).toEqual([peru]);
   });
 });
 
-describe("sortCountriesByPopulation", () => {
-  it("returns right output with test data", () => {
-    console.log(sortCountriesByPopulation(countries));
-    expect(sortCountriesByPopulation(countries)).toEqual([
-      peru,
-      poland,
-      austria,
+describe("sortCountriesByParameter", () => {
+  it("returns sorted data in descending order", () => {
+    expect(sortCountriesByParameter(countries)).toEqual([
+      90000000000000, 100, 1,
     ]);
   });
 });
 
-describe("sumTheBiggestCountries", () => {
-  it("returns right output with test data", () => {
-    console.log(sumTheBiggestCountries(countries));
-    expect(sumTheBiggestCountries(countries)).toBe(true);
+describe("sumTheBiggestPopulations", () => {
+  it("returns true if population sum is bigger than 500000000", () => {
+    expect(sumTheBiggestPopulations([90000000000000, 100, 1])).toBe(true);
   });
 });

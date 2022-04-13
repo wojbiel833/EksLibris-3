@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sumTheBiggestCountries = exports.sortCountriesByPopulation = exports.getCountriesWithoutA = exports.getCountriesEU = exports.ifPopulationsHaveChanged = exports.checkIfDataExpired = void 0;
+exports.sumTheBiggestPopulations = exports.sortCountriesByParameter = exports.getCountriesWithoutLetter = exports.getCountriesFrom = exports.ifPopulationsHaveChanged = exports.checkIfDataExpired = void 0;
 const config_1 = require("../config");
 const now = new Date();
 let TP = [];
@@ -139,13 +139,13 @@ init();
 ////////////////////////////////////////////////////////////////////////////////////////
 // Z Tablicy Państw z zadania 1 przefiltruj wszystkie należące do Unii Europejskiej.
 const countriesLS = JSON.parse(localStorage.getItem("TP"));
-const getCountriesEU = function (countries) {
+const getCountriesFrom = function (countries, from = "EU") {
     const countriesEU = [];
     if (countries) {
         countries.forEach((country) => {
             const blocs = country.regionalBlocs;
-            if (blocs !== undefined) {
-                if (blocs.find((union) => union.acronym === "EU"))
+            if (blocs) {
+                if (blocs.find((union) => union.acronym === from))
                     countriesEU.push(country);
             }
         });
@@ -155,34 +155,103 @@ const getCountriesEU = function (countries) {
     }
     return countriesEU;
 };
-exports.getCountriesEU = getCountriesEU;
-const countriesEUOutput = (0, exports.getCountriesEU)(countriesLS);
-// console.log(countriesEUOutput);
+exports.getCountriesFrom = getCountriesFrom;
+const countriesEUOutput = (0, exports.getCountriesFrom)(countriesLS);
 // Z uzyskanej w ten sposób tablicy usuń wszystkie państwa posiadające w swojej nazwie literę a.
-const getCountriesWithoutA = function (countries) {
-    return countries.filter((country) => !country.name.includes("a"));
-};
-exports.getCountriesWithoutA = getCountriesWithoutA;
-const countriesWitroutA = (0, exports.getCountriesWithoutA)(countriesEUOutput);
+const getCountriesWithoutLetter = (countries, letter = "a") => countries.filter((country) => !country.name.includes(letter));
+exports.getCountriesWithoutLetter = getCountriesWithoutLetter;
+const countriesWitroutA = (0, exports.getCountriesWithoutLetter)(countriesEUOutput);
 // Z uzyskanej w ten sposób tablicy posortuj państwa według populacji, tak by najgęściej zaludnione znajdowały się na górze listy.
-const sortCountriesByPopulation = function (countries) {
-    return countries.sort((a, b) => b.population - a.population);
+const setKey = function (country, key) {
+    return country[key];
 };
-exports.sortCountriesByPopulation = sortCountriesByPopulation;
-const sortedCountries = (0, exports.sortCountriesByPopulation)(countriesWitroutA);
+const sortCountriesByParameter = (countries, parameter = "population") => {
+    const populations = [];
+    countries.forEach((country) => {
+        const param = setKey(country, parameter);
+        populations.push(param);
+    });
+    return populations.sort((a, b) => b - a);
+};
+exports.sortCountriesByParameter = sortCountriesByParameter;
+const sortedCountries = (0, exports.sortCountriesByParameter)(countriesWitroutA);
 // Zsumuj populację pięciu najgęściej zaludnionych państw i oblicz, czy jest większa od 500 milionów
-const sumTheBiggestCountries = function (countries) {
-    const fiveBiggestCountries = countries.slice(0, 5);
-    const populations = fiveBiggestCountries.map((country) => country.population);
-    const populationInSum = populations.reduce((pop, el) => (pop += el), 0);
-    if (populationInSum > 500000000) {
-        console.log(`Population sum ${populationInSum} is bigger than 500000000`);
+const sumTheBiggestPopulations = function (countries) {
+    const fiveBiggestPopulations = countries.slice(0, 5);
+    const populationsInSum = fiveBiggestPopulations.reduce((pop, el) => (pop += el), 0);
+    if (populationsInSum > 500000000) {
+        console.log(`Population sum ${populationsInSum} is bigger than 500000000`);
         return true;
     }
     else {
-        console.log(`Population sum ${populationInSum} is smaller than 500000000`);
+        console.log(`Population sum ${populationsInSum} is smaller than 500000000`);
         return false;
     }
 };
-exports.sumTheBiggestCountries = sumTheBiggestCountries;
-(0, exports.sumTheBiggestCountries)(sortedCountries);
+exports.sumTheBiggestPopulations = sumTheBiggestPopulations;
+(0, exports.sumTheBiggestPopulations)(sortedCountries);
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+// Sprawdź języki przypisane do kraju. Użyj ich kodu iso639_1 jako klucza dla obiektu languages. Jeśli danego języka nie ma w obiekcie languages, przypisz do niego nowy obiekt o kluczach countries (wartość początkowa: pusta arajka), population (0), area (0) oraz name (pusty string). Jeśli dany język znajduje się w obiekcie languages, dodaj do tablicy countries kod alpha3code kraju, w którym jest używany, populację tego kraju do wartości population, obszar kraju do wartości area, a do name przypisz natywną nazwę tego języka.
+// Jeśli kraj nie należy do żadnej z podanych wcześniej organizacji wykonaj kroki z poprzednich dwóch punktów, ale dane umieść w tablicy other.
+// Jeśli kraj należy do więcej, niż jednej organizacji, umieść jego dane we wszystkich pasujących obiektach bloków. Blok other może się powtarzać.
+// Dla każdej organizacji dane w tablicy currencies nie mogą się powtarzać.
+// Dla każdej organizacji dane w tablicy countries powinny być posortowane alfabetycznie z do a.
+// Wyświetl w konsoli:
+// Nazwę organizacji o największej populacji,
+// Nazwę organizacji o drugiej największej gęstości zaludnienia,
+// Nazwę organizacji zajmującej trzeci największy obszar,
+// Nazwy organizacji o największej i najmniejszej przypisanej do nich liczbie języków,
+// Nazwę organizacji wykorzystującej największą liczbę walut,
+// Nazwę organizacji posiadającej najmniejszą liczbę państw członkowskich,
+// Natywną nazwę języka wykorzystywanego w największej liczbie krajów,
+// Natywną nazwę języka wykorzystywanego przez najmniejszą liczbę ludzi,
+// Natywne nazwy języków wykorzystywanych na największym i najmniejszym obszarze.
+// W przypadku remisów wyświetl wszystkich zwycięzców.
+// Stwórz nowy obiekt. Powinien on posiadać klucze EU, NAFTA, AU oraz other. Każdy z tych kluczy będzie zawierał obiekt o kluczach countries, population, languages oraz currencies. Wartościami countries oraz currencies są puste tablice, wartość population wynosi 0. Wartość languages to pusty obiekt.
+const countriesObj = {
+    EU: {
+        countries: [],
+        population: 0,
+        languages: {},
+        currencies: [],
+    },
+    NAFTA: {
+        countries: [],
+        population: 0,
+        languages: {},
+        currencies: [],
+    },
+    AU: {
+        countries: [],
+        population: 0,
+        languages: {},
+        currencies: [],
+    },
+    others: {
+        countries: [],
+        population: 0,
+        languages: {},
+        currencies: [],
+    },
+};
+// W TP znajdź kraje należące do EU, NAFTA albo AU. Jeśli państwo należy do którejś z tych grup, umieść jego dane w stosownym obiekcie:
+const EUCountries = (0, exports.getCountriesFrom)(countriesLS, "EU");
+EUCountries.forEach((country) => {
+    var _a, _b;
+    // natywną nazwę w tablicy countries,
+    (_a = countriesObj.EU.countries) === null || _a === void 0 ? void 0 : _a.push(country.name);
+    // używane przez nią waluty w tablicy currencies
+    (_b = country.currencies) === null || _b === void 0 ? void 0 : _b.forEach((currency) => { var _a; return (_a = countriesObj.EU.currencies) === null || _a === void 0 ? void 0 : _a.push(currency); });
+    // dodaj jej populację do wartości population.
+    countriesObj.EU.population += country.population;
+});
+console.log(countriesObj);

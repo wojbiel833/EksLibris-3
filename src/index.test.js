@@ -59,29 +59,25 @@ const peru = {
     regionalBlocs: [{ acronym: "SAARC" }],
 };
 const countries = [austria, peru, poland];
-describe("getCountriesEU", () => {
-    it("returns right output with test data", () => {
-        expect((0, index_1.getCountriesEU)(countries)).toEqual([austria, poland]);
+describe("getCountriesFrom", () => {
+    it("returns countries that are in EU", () => {
+        expect((0, index_1.getCountriesFrom)(countries)).toEqual([austria, poland]);
     });
 });
-describe("getCountriesWithoutA", () => {
-    it("returns right output with test data", () => {
-        expect((0, index_1.getCountriesWithoutA)(countries)).toEqual([peru]);
+describe("getCountriesWithoutLetter", () => {
+    it("returns countries witout 'a' n the name", () => {
+        expect((0, index_1.getCountriesWithoutLetter)(countries)).toEqual([peru]);
     });
 });
-describe("sortCountriesByPopulation", () => {
-    it("returns right output with test data", () => {
-        console.log((0, index_1.sortCountriesByPopulation)(countries));
-        expect((0, index_1.sortCountriesByPopulation)(countries)).toEqual([
-            peru,
-            poland,
-            austria,
+describe("sortCountriesByParameter", () => {
+    it("returns sorted data in descending order", () => {
+        expect((0, index_1.sortCountriesByParameter)(countries)).toEqual([
+            90000000000000, 100, 1,
         ]);
     });
 });
-describe("sumTheBiggestCountries", () => {
-    it("returns right output with test data", () => {
-        console.log((0, index_1.sumTheBiggestCountries)(countries));
-        expect((0, index_1.sumTheBiggestCountries)(countries)).toBe(true);
+describe("sumTheBiggestPopulations", () => {
+    it("returns true if population sum is bigger than 500000000", () => {
+        expect((0, index_1.sumTheBiggestPopulations)([90000000000000, 100, 1])).toBe(true);
     });
 });
