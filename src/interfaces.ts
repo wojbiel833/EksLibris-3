@@ -3,22 +3,29 @@ export type RegionalBlocs = {
   acronym: string;
 };
 
+interface Currencies {
+  code: string;
+}
+
 export interface Country {
   name: string;
   population: number;
   regionalBlocs?: RegionalBlocs[];
   countries?: string[];
   languages?: {};
-  currencies?: string[];
+  currencies?: Currencies[];
 }
 
-export interface CountriesObj {
+export interface CountriesInUnionsObj {
   EU: Partial<Country>;
   NAFTA: Partial<Country>;
   AU: Partial<Country>;
   others: Partial<Country>;
 }
 
-export function SetKey<A extends Country>(object: A, key: keyof A): A[keyof A] {
+export function SetKey<A extends Country | Partial<CountriesInUnionsObj>>(
+  object: A,
+  key: keyof A
+): A[keyof A] {
   return object[key];
 }

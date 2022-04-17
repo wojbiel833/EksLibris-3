@@ -69,11 +69,10 @@ describe("getCountriesWithoutLetter", () => {
         expect((0, index_1.getCountriesWithoutLetter)(countries)).toEqual([peru]);
     });
 });
-describe("sortCountriesByParameter", () => {
+describe("sortCountriesByKey", () => {
     it("returns sorted data in descending order", () => {
-        expect((0, index_1.sortCountriesByParameter)(countries)).toEqual([
-            90000000000000, 100, 1,
-        ]);
+        console.log((0, index_1.sortCountriesByKey)(countries));
+        expect((0, index_1.sortCountriesByKey)(countries)).toEqual([90000000000000, 100, 1]);
     });
 });
 describe("sumTheBiggestPopulations", () => {

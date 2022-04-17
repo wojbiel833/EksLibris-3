@@ -3,7 +3,7 @@ import {
   checkIfDataExpired,
   getCountriesFrom,
   getCountriesWithoutLetter,
-  sortCountriesByParameter,
+  sortCountriesByKey,
   sumTheBiggestPopulations,
 } from "./index";
 
@@ -91,11 +91,10 @@ describe("getCountriesWithoutLetter", () => {
   });
 });
 
-describe("sortCountriesByParameter", () => {
+describe("sortCountriesByKey", () => {
   it("returns sorted data in descending order", () => {
-    expect(sortCountriesByParameter(countries)).toEqual([
-      90000000000000, 100, 1,
-    ]);
+    console.log(sortCountriesByKey(countries));
+    expect(sortCountriesByKey(countries)).toEqual([90000000000000, 100, 1]);
   });
 });
 
