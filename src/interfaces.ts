@@ -12,7 +12,7 @@ export interface Country {
   population: number;
   regionalBlocs?: RegionalBlocs[];
   countries?: string[];
-  languages?: {};
+  languages?: [];
   currencies?: Currencies[];
 }
 

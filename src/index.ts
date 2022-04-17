@@ -252,25 +252,25 @@ const countriesInUnionsObj: CountriesInUnionsObj = {
   EU: {
     countries: [],
     population: 0,
-    languages: {},
+    languages: [],
     currencies: [],
   },
   NAFTA: {
     countries: [],
     population: 0,
-    languages: {},
+    languages: [],
     currencies: [],
   },
   AU: {
     countries: [],
     population: 0,
-    languages: {},
+    languages: [],
     currencies: [],
   },
   others: {
     countries: [],
     population: 0,
-    languages: {},
+    languages: [],
     currencies: [],
   },
 };
@@ -278,7 +278,7 @@ const countriesInUnionsObj: CountriesInUnionsObj = {
 // W TP znajdź kraje należące do EU, NAFTA albo AU. Jeśli państwo należy do którejś z tych grup, umieść jego dane w stosownym obiekcie:
 
 const cloneTP = cloneDeep(countriesLS);
-console.log(cloneTP);
+// console.log(cloneTP);
 const EUCountries = getCountriesFrom(countriesLS, "EU")!;
 // console.log(EUCountries);
 const NAFTACountries = getCountriesFrom(countriesLS, "NAFTA")!;
@@ -299,6 +299,7 @@ const assingValuesToObj = function (
   countries.forEach((country, i) => {
     // natywną nazwę w tablicy countries,
     countryInUnion.countries?.push(country.name);
+
     others.push(country.name);
     // używane przez nią waluty w tablicy currencies
     country.currencies?.forEach((currency) => {
@@ -306,8 +307,15 @@ const assingValuesToObj = function (
     });
     // dodaj jej populację do wartości population.
     countryInUnion.population! += country.population;
-    // Sprawdź języki przypisane do kraju. Użyj ich kodu iso639_1 jako klucza dla obiektu languages. Jeśli danego języka nie ma w obiekcie languages, przypisz do niego nowy obiekt o kluczach countries (wartość początkowa: pusta arajka), population (0), area (0) oraz name (pusty string). Jeśli dany język znajduje się w obiekcie languages, dodaj do tablicy countries kod alpha3code kraju, w którym jest używany, populację tego kraju do wartości population, obszar kraju do wartości area, a do name przypisz natywną nazwę tego języka.
-    // console.log(countryInUnion.countries?.push(country.name) === "number");
+    // Sprawdź języki przypisane do kraju.
+    // console.log(country.languages);
+    // Użyj ich kodu iso639_1 jako klucza dla obiektu languages.
+    country.languages!.forEach((lng) => {
+      console.log(lng);
+      // lng.forEach((l) => console.log(l));
+    });
+    // Jeśli danego języka nie ma w obiekcie languages, przypisz do niego nowy obiekt o kluczach countries (wartość początkowa: pusta arajka), population (0), area (0) oraz name (pusty string).
+    // Jeśli dany język znajduje się w obiekcie languages, dodaj do tablicy countries kod alpha3code kraju, w którym jest używany, populację tego kraju do wartości population, obszar kraju do wartości area, a do name przypisz natywną nazwę tego języka.
 
     //  uwarunkuj others
     if (newObjKey !== "others") {
@@ -327,6 +335,6 @@ assingValuesToObj(NAFTACountries, "currencies", countriesInUnionsObj, "NAFTA");
 assingValuesToObj(AUCountries, "currencies", countriesInUnionsObj, "AU");
 assingValuesToObj(cloneTP, "currencies", countriesInUnionsObj, "others");
 
-console.log(cloneTP);
-console.log(countriesInUnionsObj);
-console.log(countriesInUnionsObj.others);
+// console.log(cloneTP);
+// console.log(countriesInUnionsObj.EU);
+// console.log(countriesInUnionsObj.others);
