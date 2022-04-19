@@ -4,6 +4,7 @@ import {
   CountriesInUnionsObj,
   RegionalBlocs,
   SetKey,
+  Language,
 } from "./interfaces";
 
 import { uniqBy, cloneDeep } from "lodash";
@@ -27,10 +28,14 @@ const setDateWithExpiry = function (key: string, value: Date, ttl: number) {
 
 // 4) Przy starcie aplikacji sprawdź ile czasu minęło od poprzedniego ściągnięcia danych państw. Jeśli od ostatniego razu minęło co najmniej 7 dni, ściągnij i zapisz je ponownie.
 const getAndCheckDateWithExpiry = function (key: string) {
-  const itemString = localStorage.getItem(key)!;
-  const dateExpiry = JSON.parse(itemString);
+  const itemString = localStorage.getItem(key);
+  if (itemString) {
+    const dateExpiry = JSON.parse(itemString);
 
-  return checkIfDataExpired(dateExpiry.expiry, now);
+    return checkIfDataExpired(dateExpiry.expiry, now);
+  }
+
+  return checkIfDataExpired(0, now);
 };
 
 export const checkIfDataExpired = function (
@@ -288,6 +293,28 @@ const AUCountries = getCountriesFrom(countriesLS, "AU")!;
 const others: string[] = [];
 // console.log(others);
 
+// let x = new Object();
+
+// x.name = "Wojtek";
+// x.eyeColor = "blue";
+// x.age = 27;
+// console.log(x);
+// interface PersonInt {
+
+// }
+
+class languageObj implements Language {
+  name: string;
+  population: number;
+  area: number;
+
+  constructor(name: string, population: number, area: number) {
+    this.name = name;
+    this.population = population;
+    this.area = area;
+  }
+}
+
 const assingValuesToObj = function (
   countries: Country[],
   countryKey: keyof Country,
@@ -308,13 +335,20 @@ const assingValuesToObj = function (
     // dodaj jej populację do wartości population.
     countryInUnion.population! += country.population;
     // Sprawdź języki przypisane do kraju.
-    // console.log(country.languages);
+    console.log(country.languages);
     // Użyj ich kodu iso639_1 jako klucza dla obiektu languages.
-    country.languages!.forEach((lng) => {
+    country.languages!.forEach((language, i, arr) => {
+      const lng = language.iso639_1 as keyof Language;
       console.log(lng);
-      // lng.forEach((l) => console.log(l));
+      const emptyObj = new languageObj("", 0, 0);
+      console.log(emptyObj);
+      const newKeyValuePair = `${lng}: ${emptyObj}`;
+      // Jeśli danego języka nie ma w obiekcie languages, przypisz do niego nowy obiekt o kluczach countries (wartość początkowa: pusta arajka), population (0), area (0) oraz name (pusty string).
+      countryInUnion.languages?.push(newKeyValuePair);
+
+      // console.log(lng);
+      // country.languages?.push();
     });
-    // Jeśli danego języka nie ma w obiekcie languages, przypisz do niego nowy obiekt o kluczach countries (wartość początkowa: pusta arajka), population (0), area (0) oraz name (pusty string).
     // Jeśli dany język znajduje się w obiekcie languages, dodaj do tablicy countries kod alpha3code kraju, w którym jest używany, populację tego kraju do wartości population, obszar kraju do wartości area, a do name przypisz natywną nazwę tego języka.
 
     //  uwarunkuj others
@@ -331,10 +365,10 @@ const assingValuesToObj = function (
 };
 
 assingValuesToObj(EUCountries, "currencies", countriesInUnionsObj, "EU");
-assingValuesToObj(NAFTACountries, "currencies", countriesInUnionsObj, "NAFTA");
-assingValuesToObj(AUCountries, "currencies", countriesInUnionsObj, "AU");
-assingValuesToObj(cloneTP, "currencies", countriesInUnionsObj, "others");
+// assingValuesToObj(NAFTACountries, "currencies", countriesInUnionsObj, "NAFTA");
+// assingValuesToObj(AUCountries, "currencies", countriesInUnionsObj, "AU");
+// assingValuesToObj(cloneTP, "currencies", countriesInUnionsObj, "others");
 
 // console.log(cloneTP);
-// console.log(countriesInUnionsObj.EU);
-// console.log(countriesInUnionsObj.others);
+console.log(countriesInUnionsObj.EU.languages);
+// console.log(countriesInUnionsObj);

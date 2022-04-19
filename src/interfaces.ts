@@ -7,12 +7,20 @@ interface Currencies {
   code: string;
 }
 
+export interface Language {
+  name: string;
+  population: number;
+  area: number;
+  languages?: string;
+  iso639_1?: string;
+}
+
 export interface Country {
   name: string;
   population: number;
   regionalBlocs?: RegionalBlocs[];
   countries?: string[];
-  languages?: [];
+  languages?: Language[];
   currencies?: Currencies[];
 }
 
@@ -23,9 +31,8 @@ export interface CountriesInUnionsObj {
   others: Partial<Country>;
 }
 
-export function SetKey<A extends Country | Partial<CountriesInUnionsObj>>(
-  object: A,
-  key: keyof A
-): A[keyof A] {
+export function SetKey<
+  A extends Country | Partial<CountriesInUnionsObj> | Language[]
+>(object: A, key: keyof A): A[keyof A] {
   return object[key];
 }

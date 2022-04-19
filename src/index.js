@@ -295,4 +295,4 @@ assingValuesToObj(AUCountries, "currencies", countriesInUnionsObj, "AU");
 assingValuesToObj(cloneTP, "currencies", countriesInUnionsObj, "others");
 // console.log(cloneTP);
 // console.log(countriesInUnionsObj.EU);
-// console.log(countriesInUnionsObj.others);
+console.log(countriesInUnionsObj);
