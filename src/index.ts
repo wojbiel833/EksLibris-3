@@ -8,6 +8,7 @@ import {
 } from "./interfaces";
 
 import { uniqBy, cloneDeep } from "lodash";
+import { stringify } from "ts-jest";
 
 const now = new Date();
 let TP: [] | undefined = [];
@@ -290,18 +291,8 @@ const NAFTACountries = getCountriesFrom(countriesLS, "NAFTA")!;
 // console.log(NAFTACountries);
 const AUCountries = getCountriesFrom(countriesLS, "AU")!;
 // console.log(AUCountries);
-const others: string[] = [];
-// console.log(others);
-
-// let x = new Object();
-
-// x.name = "Wojtek";
-// x.eyeColor = "blue";
-// x.age = 27;
-// console.log(x);
-// interface PersonInt {
-
-// }
+const usedCountries: string[] = [];
+// console.log(usedCountries);
 
 class languageObj implements Language {
   name: string;
@@ -323,52 +314,67 @@ const assingValuesToObj = function (
 ) {
   const countryInUnion = setKey(newObj, newObjKey);
 
-  countries.forEach((country, i) => {
+  countries.forEach((country, i, countries) => {
+    const newLanguageObj = new languageObj(
+      countries[i].name,
+      countries[i].population,
+      countries[i].area
+    );
+
     // natywną nazwę w tablicy countries,
     countryInUnion.countries?.push(country.name);
 
-    others.push(country.name);
+    // zachowaj nazwy kazdego uzytego pañstwa
+    usedCountries.push(country.name);
+
     // używane przez nią waluty w tablicy currencies
     country.currencies?.forEach((currency) => {
       countryInUnion.currencies?.push(currency);
     });
+
     // dodaj jej populację do wartości population.
     countryInUnion.population! += country.population;
-    // Sprawdź języki przypisane do kraju.
-    console.log(country.languages);
-    // Użyj ich kodu iso639_1 jako klucza dla obiektu languages.
-    country.languages!.forEach((language, i, arr) => {
+
+    // Sprawdź języki przypisane do kraju i użyj ich kodu iso639_1 jako klucza dla obiektu languages.
+    country.languages!.forEach((language) => {
       const lng = language.iso639_1 as keyof Language;
-      console.log(lng);
       const emptyObj = new languageObj("", 0, 0);
-      console.log(emptyObj);
-      const newKeyValuePair = `${lng}: ${emptyObj}`;
-      // Jeśli danego języka nie ma w obiekcie languages, przypisz do niego nowy obiekt o kluczach countries (wartość początkowa: pusta arajka), population (0), area (0) oraz name (pusty string).
-      countryInUnion.languages?.push(newKeyValuePair);
+      const keyValuePair = { [lng]: emptyObj };
 
-      // console.log(lng);
-      // country.languages?.push();
+      countryInUnion.languages?.push(keyValuePair);
     });
-    // Jeśli dany język znajduje się w obiekcie languages, dodaj do tablicy countries kod alpha3code kraju, w którym jest używany, populację tego kraju do wartości population, obszar kraju do wartości area, a do name przypisz natywną nazwę tego języka.
 
-    //  uwarunkuj others
+    //  uwarunkuj usedCountries
     if (newObjKey !== "others") {
       for (let i = 0; i < cloneTP.length; i++) {
-        for (let j = 0; j < others.length; j++) {
-          if (cloneTP[i].name === others[j]) cloneTP.splice(i, 1);
+        for (let j = 0; j < usedCountries.length; j++) {
+          if (cloneTP[i].name === usedCountries[j]) cloneTP.splice(i, 1);
         }
       }
     }
+
+    // Jeśli dany język znajduje się w obiekcie languages, dodaj do tablicy countries kod alpha3code kraju, w którym jest używany, populację tego kraju do wartości population, obszar kraju do wartości area, a do name przypisz natywną nazwę tego języka.
+    countryInUnion.languages?.map((language, i, arr) => {
+      const [value] = Object.values(language);
+
+      if (value.name === "") {
+        for (let a = 0; a < countries.length; a++) {
+          for (let b = 0; b < usedCountries.length; b++) {
+            value.name = newLanguageObj.name;
+            value.population = newLanguageObj.population++;
+            value.area = newLanguageObj.area++;
+          }
+        }
+      }
+    });
   });
 
   countryInUnion.currencies = uniqBy(countryInUnion.currencies, "code");
 };
 
 assingValuesToObj(EUCountries, "currencies", countriesInUnionsObj, "EU");
-// assingValuesToObj(NAFTACountries, "currencies", countriesInUnionsObj, "NAFTA");
-// assingValuesToObj(AUCountries, "currencies", countriesInUnionsObj, "AU");
-// assingValuesToObj(cloneTP, "currencies", countriesInUnionsObj, "others");
+assingValuesToObj(NAFTACountries, "currencies", countriesInUnionsObj, "NAFTA");
+assingValuesToObj(AUCountries, "currencies", countriesInUnionsObj, "AU");
+assingValuesToObj(cloneTP, "currencies", countriesInUnionsObj, "others");
 
-// console.log(cloneTP);
-console.log(countriesInUnionsObj.EU.languages);
-// console.log(countriesInUnionsObj);
+console.log(countriesInUnionsObj);

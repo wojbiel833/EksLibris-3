@@ -8,9 +8,9 @@ interface Currencies {
 }
 
 export interface Language {
-  name: string;
-  population: number;
-  area: number;
+  name?: string;
+  population?: number;
+  area?: number;
   languages?: string;
   iso639_1?: string;
 }
@@ -18,6 +18,7 @@ export interface Language {
 export interface Country {
   name: string;
   population: number;
+  area: number;
   regionalBlocs?: RegionalBlocs[];
   countries?: string[];
   languages?: Language[];
