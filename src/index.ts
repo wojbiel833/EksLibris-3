@@ -289,6 +289,7 @@ const NAFTACountries = getCountriesFrom(countriesLS, "NAFTA")!;
 const AUCountries = getCountriesFrom(countriesLS, "AU")!;
 
 const usedCountries: string[] = [];
+const countriesNamesFromLanguages: string[] = [];
 const countriesNames: string[] = [];
 const organisationsCountries: number[] = [];
 const organisationsPop: number[] = [];
@@ -544,16 +545,33 @@ flatOrganizationsLanguages.find((language) => {
   // console.log(language);
   const [value] = Object.values(language);
   // console.log(value);
-  if (value.name) countriesNames.push(value.name);
+  if (value.name) countriesNamesFromLanguages.push(value.name);
+  for (let l = 0; l <= countriesNamesFromLanguages.length - 1; l++) {
+    // console.log(countriesNamesFromLanguages[l]);
+    for (let m = 0; m <= countriesNames.length - 1; m++) {
+      if (countriesNamesFromLanguages[l] === countriesNames[m]) a++;
+    }
+  }
 });
 
-console.log(countriesNames);
-for (let f = 0; f <= countriesNames.length - 1; f++) {
-  console.log(countriesNames[f]);
+console.log("countriesNamesFromLanguages", countriesNamesFromLanguages);
+// console.log("countriesNames", countriesNames);
+// console.log("usedCountries", usedCountries);
+// if()
+const arr: any[] = [];
+let a = 0;
+countriesNamesFromLanguages.forEach((name) => {
+  arr.push({ [name]: a });
+});
 
-  if (countriesNames[f]) {
-  }
-}
+// for (let l = 0; l <= countriesNamesFromLanguages.length - 1; l++) {
+//   // console.log(countriesNamesFromLanguages[l]);
+//   for (let m = 0; m <= countriesNames.length - 1; m++) {
+//     if (countriesNamesFromLanguages[l] !== countriesNames[m])
+//       console.log("aaaaa");
+//   }
+// }
+// console.log(arr);
 // Natywną nazwę języka wykorzystywanego przez najmniejszą liczbę ludzi,
 // Natywne nazwy języków wykorzystywanych na największym i najmniejszym obszarze.
 // W przypadku remisów wyświetl wszystkich zwycięzców.
