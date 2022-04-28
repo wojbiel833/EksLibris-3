@@ -6,24 +6,28 @@ describe("populationsHaveChanged", () => {
         {
             name: "Spain",
             population: 10000000,
+            area: 0,
         },
     ];
     const unchangedPopulationNew = [
         {
             name: "Spain",
             population: 10000000,
+            area: 0,
         },
     ];
     const changedPopulationOld = [
         {
             name: "Ukraine",
             population: 10000000,
+            area: 0,
         },
     ];
     const changedPopulationNew = [
         {
             name: "Ukraine",
             population: 100000,
+            area: 0,
         },
     ];
     test.each([

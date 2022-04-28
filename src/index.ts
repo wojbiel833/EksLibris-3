@@ -5,10 +5,12 @@ import {
   RegionalBlocs,
   SetKey,
   Language,
+  Currencies,
 } from "./interfaces";
 
-import { uniqBy, cloneDeep } from "lodash";
+import { uniqBy, cloneDeep, orderBy } from "lodash";
 import { stringify } from "ts-jest";
+import { validateLocaleAndSetLanguage } from "typescript";
 
 const now = new Date();
 let TP: [] | undefined = [];
@@ -168,21 +170,22 @@ export const getCountriesFrom = function (
         if (blocs.find((union: RegionalBlocs) => union.acronym === from))
           countriesEU.push(country);
       }
+      return false;
     });
   } else {
     console.log("No data in local storage!");
   }
   return countriesEU;
 };
-const countriesEUOutput: Country[] = getCountriesFrom(countriesLS);
+const countriesEUOutput: Country[] | undefined = getCountriesFrom(countriesLS);
 
 // Z uzyskanej w ten sposób tablicy usuń wszystkie państwa posiadające w swojej nazwie literę a.
 export const getCountriesWithoutLetter = (
-  countries: Country[],
+  countries: Country[] | undefined,
   letter: string = "a"
-) => countries.filter((country) => !country.name.includes(letter));
+) => countries?.filter((country) => !country.name.includes(letter));
 
-const countriesWitroutA: Country[] =
+const countriesWitroutA: Country[] | undefined =
   getCountriesWithoutLetter(countriesEUOutput);
 
 // Z uzyskanej w ten sposób tablicy posortuj państwa według populacji, tak by najgęściej zaludnione znajdowały się na górze listy.
@@ -191,13 +194,15 @@ const setKey: typeof SetKey = function (country, key) {
 };
 
 export const sortCountriesByKey = (
-  countries: Country[],
+  countries: Country[] | undefined,
   key: keyof Country = "population"
 ) => {
   const populations: any[] = [];
-  countries.forEach((country) => {
+  countries?.forEach((country) => {
+    // if (country) {
     const data = setKey(country, key);
     populations.push(data);
+    // }
   });
 
   return populations.sort((a: number, b: number) => b - a);
@@ -236,10 +241,6 @@ sumTheBiggestPopulations(sortedCountries);
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
 
-// Jeśli kraj nie należy do żadnej z podanych wcześniej organizacji wykonaj kroki z poprzednich dwóch punktów, ale dane umieść w tablicy other.
-// Jeśli kraj należy do więcej, niż jednej organizacji, umieść jego dane we wszystkich pasujących obiektach bloków. Blok other może się powtarzać.
-// Dla każdej organizacji dane w tablicy currencies nie mogą się powtarzać.
-// Dla każdej organizacji dane w tablicy countries powinny być posortowane alfabetycznie z do a.
 // Wyświetl w konsoli:
 // Nazwę organizacji o największej populacji,
 // Nazwę organizacji o drugiej największej gęstości zaludnienia,
@@ -283,16 +284,30 @@ const countriesInUnionsObj: CountriesInUnionsObj = {
 
 // W TP znajdź kraje należące do EU, NAFTA albo AU. Jeśli państwo należy do którejś z tych grup, umieść jego dane w stosownym obiekcie:
 
-const cloneTP = cloneDeep(countriesLS);
-// console.log(cloneTP);
 const EUCountries = getCountriesFrom(countriesLS, "EU")!;
-// console.log(EUCountries);
 const NAFTACountries = getCountriesFrom(countriesLS, "NAFTA")!;
-// console.log(NAFTACountries);
 const AUCountries = getCountriesFrom(countriesLS, "AU")!;
-// console.log(AUCountries);
+
 const usedCountries: string[] = [];
-// console.log(usedCountries);
+const countriesNames: string[] = [];
+const organisationsCountries: number[] = [];
+const organisationsPop: number[] = [];
+const organisationsAreas: number[] = [];
+const organisationsDensity: number[] = [];
+const organisationsLanguages: Language[][] = [];
+const organisationsCurrencies: Currencies[][] = [];
+const organisationsNames = Object.keys(countriesInUnionsObj);
+
+const organisationsDensityCopy = [...organisationsDensity];
+const clonedTP = cloneDeep(countriesLS);
+
+let biggestOrg = 0;
+let biggestArea = 0;
+let totalLanguagesArea = 0;
+let currenciesCount = 0;
+let minLanguages = 0;
+let maxLanguages = countriesLS.length;
+let maxCountries = countriesLS.length;
 
 class languageObj implements Language {
   name: string;
@@ -308,73 +323,237 @@ class languageObj implements Language {
 
 const assingValuesToObj = function (
   countries: Country[],
-  countryKey: keyof Country,
   newObj: CountriesInUnionsObj,
   newObjKey: keyof CountriesInUnionsObj
 ) {
-  const countryInUnion = setKey(newObj, newObjKey);
+  const organization = setKey(newObj, newObjKey);
+  let countriesCount = 0;
+  if (countries) {
+    countries.forEach((country, i, countries) => {
+      const newLanguageObj = new languageObj(
+        countries[i].name,
+        countries[i].population,
+        countries[i].area
+      );
 
-  countries.forEach((country, i, countries) => {
-    const newLanguageObj = new languageObj(
-      countries[i].name,
-      countries[i].population,
-      countries[i].area
-    );
+      // natywną nazwę w tablicy countries,
+      organization.countries?.push(country.name);
+      // zwiększ liczbe panstw
+      countriesCount = countriesCount + 1;
+      // zachowaj nazwy kazdego uzytego pañstwa
+      usedCountries.push(country.name);
 
-    // natywną nazwę w tablicy countries,
-    countryInUnion.countries?.push(country.name);
+      // używane przez nią waluty w tablicy currencies
+      country.currencies?.forEach((currency) => {
+        organization.currencies?.push(currency);
+      });
 
-    // zachowaj nazwy kazdego uzytego pañstwa
-    usedCountries.push(country.name);
+      // dodaj jej populację do wartości population.
+      organization.population! += country.population;
 
-    // używane przez nią waluty w tablicy currencies
-    country.currencies?.forEach((currency) => {
-      countryInUnion.currencies?.push(currency);
-    });
+      // Sprawdź języki przypisane do kraju i użyj ich kodu iso639_1 jako klucza dla obiektu languages.
+      country.languages!.forEach((language) => {
+        const lng = language.iso639_1 as keyof Language;
+        if (lng) {
+          const emptyObj = new languageObj("", 0, 0);
+          const keyValuePair = { [lng]: emptyObj };
 
-    // dodaj jej populację do wartości population.
-    countryInUnion.population! += country.population;
-
-    // Sprawdź języki przypisane do kraju i użyj ich kodu iso639_1 jako klucza dla obiektu languages.
-    country.languages!.forEach((language) => {
-      const lng = language.iso639_1 as keyof Language;
-      const emptyObj = new languageObj("", 0, 0);
-      const keyValuePair = { [lng]: emptyObj };
-
-      countryInUnion.languages?.push(keyValuePair);
-    });
-
-    //  uwarunkuj usedCountries
-    if (newObjKey !== "others") {
-      for (let i = 0; i < cloneTP.length; i++) {
-        for (let j = 0; j < usedCountries.length; j++) {
-          if (cloneTP[i].name === usedCountries[j]) cloneTP.splice(i, 1);
+          organization.languages?.push(keyValuePair);
         }
-      }
-    }
+      });
 
-    // Jeśli dany język znajduje się w obiekcie languages, dodaj do tablicy countries kod alpha3code kraju, w którym jest używany, populację tego kraju do wartości population, obszar kraju do wartości area, a do name przypisz natywną nazwę tego języka.
-    countryInUnion.languages?.map((language, i, arr) => {
-      const [value] = Object.values(language);
-
-      if (value.name === "") {
-        for (let a = 0; a < countries.length; a++) {
-          for (let b = 0; b < usedCountries.length; b++) {
-            value.name = newLanguageObj.name;
-            value.population = newLanguageObj.population++;
-            value.area = newLanguageObj.area++;
+      //  uwarunkuj scernariusz dla klucza others
+      if (newObjKey !== "others") {
+        for (let i = 0; i < clonedTP.length; i++) {
+          for (let j = 0; j < usedCountries.length; j++) {
+            if (clonedTP[i].name === usedCountries[j]) clonedTP.splice(i, 1);
           }
         }
       }
+
+      // Jeśli dany język znajduje się w obiekcie languages, dodaj do tablicy countries kod alpha3code kraju, w którym jest używany, populację tego kraju do wartości population, obszar kraju do wartości area, a do name przypisz natywną nazwę tego języka.
+      organization.languages?.map((language) => {
+        const [value] = Object.values(language);
+
+        if (value.name === "") {
+          for (let a = 0; a < countries.length; a++) {
+            for (let b = 0; b < usedCountries.length; b++) {
+              value.name = newLanguageObj.name;
+              value.population = newLanguageObj.population++;
+              value.area = newLanguageObj.area++;
+            }
+          }
+        }
+      });
+
+      // Jeśli kraj należy do więcej, niż jednej organizacji,
+      if (country.regionalBlocs) {
+        if (country.regionalBlocs.length >= 2) {
+          // umieść jego dane we wszystkich pasujących obiektach bloków. Blok other może się powtarzać.
+          country.regionalBlocs.forEach((block) => {
+            block.country = country;
+          });
+        }
+      }
     });
+  }
+
+  // Dla każdej organizacji dane w tablicy currencies nie mogą się powtarzać.
+  organization.currencies = uniqBy(organization.currencies, "code");
+
+  // Dla każdej organizacji dane w tablicy countries powinny być posortowane alfabetycznie z do a.
+  organization.currencies = orderBy(organization.currencies, [
+    "code",
+  ]).reverse();
+
+  // zwieksz licze total area w zaleznosci od uzywanych jezykow
+  organization.languages?.forEach((language) => {
+    const [value] = Object.values(language);
+    totalLanguagesArea = value.area++;
   });
 
-  countryInUnion.currencies = uniqBy(countryInUnion.currencies, "code");
-};
+  if (organization.population) {
+    organisationsDensity.push(organization.population / totalLanguagesArea);
+    organisationsAreas.push(totalLanguagesArea);
+  }
 
-assingValuesToObj(EUCountries, "currencies", countriesInUnionsObj, "EU");
-assingValuesToObj(NAFTACountries, "currencies", countriesInUnionsObj, "NAFTA");
-assingValuesToObj(AUCountries, "currencies", countriesInUnionsObj, "AU");
-assingValuesToObj(cloneTP, "currencies", countriesInUnionsObj, "others");
+  organisationsCountries.push(countriesCount);
+
+  if (organization.population) {
+    organisationsPop.push(organization.population);
+  }
+
+  if (organization.languages) {
+    organisationsLanguages.push(organization.languages);
+  }
+
+  if (organization.currencies) {
+    organisationsCurrencies.push(organization.currencies);
+  }
+};
+assingValuesToObj(EUCountries, countriesInUnionsObj, "EU");
+assingValuesToObj(NAFTACountries, countriesInUnionsObj, "NAFTA");
+assingValuesToObj(AUCountries, countriesInUnionsObj, "AU");
+
+// Jeśli kraj nie należy do żadnej z podanych wcześniej organizacji wykonaj kroki z poprzednich dwóch punktów, ale dane umieść w tablicy other. (LANGUAGES)
+assingValuesToObj(clonedTP, countriesInUnionsObj, "others");
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// WYŚWIETL:
+organisationsPop.forEach((pop) => {
+  if (pop >= biggestOrg) biggestOrg = pop;
+});
+const popIndex = organisationsPop.indexOf(biggestOrg);
+// console.log('Nazwę organizacji o największej populacji',organisationsNames[popIndex]);
+
+const sorted = organisationsDensityCopy.sort((a: number, b: number) => b - a);
+const secondMostDensed = sorted[1];
+const densityIndex = organisationsDensity.indexOf(secondMostDensed);
+// console.log(
+//   "Nazwę organizacji o drugiej największej gęstości zaludnienia",
+//   organisationsNames[densityIndex]
+// );
+
+organisationsAreas.forEach((org) => {
+  if (org >= biggestArea) {
+    biggestArea = org;
+  }
+});
+const areaIndex = organisationsAreas.indexOf(biggestArea);
+// console.log(
+//   "Nazwę organizacji zajmującej trzeci największy obszar",
+//   organisationsNames[areaIndex]
+// );
+
+organisationsLanguages.forEach((language) => {
+  if (maxLanguages >= language.length) {
+    minLanguages = language.length;
+    const index = organisationsLanguages.indexOf(language);
+    // console.log(
+    //   "Nazwy organizacji o najmniejszej przypisanej do nich liczbie języków",
+    //   organisationsNames[index]
+    // );
+  }
+
+  if (minLanguages <= language.length) {
+    maxLanguages = language.length;
+    const index = organisationsLanguages.indexOf(language);
+    // console.log(
+    //   "Nazwy organizacji o największej przypisanej do nich liczbie języków",
+    //   organisationsNames[index]
+    // );
+  }
+});
+
+organisationsLanguages.find((language) => {
+  if (language.length === minLanguages) {
+    console.log(language);
+    const index = organisationsLanguages.indexOf(language);
+    // console.log(
+    //   'Nazwy organizacji o najmniejszej przypisanej do nich liczbie języków"',
+    //   organisationsNames[index]
+    // );
+  }
+
+  if (language.length === maxLanguages) {
+    const index = organisationsLanguages.indexOf(language);
+    // console.log(
+    //   "Nazwy organizacji o największej przypisanej do nich liczbie języków",
+    //   organisationsNames[index]
+    // );
+  }
+
+  // Natywną nazwę języka wykorzystywanego w największej liczbie krajów,
+  console.log(language);
+  // Znajdż język używany w największej liczbie krajow
+
+  // Wyświetl jego natywną nazwę
+});
+
+organisationsCurrencies.forEach((currency) => {
+  // console.log(currency.length);
+  if (currency.length >= currenciesCount) currenciesCount = currency.length;
+});
+
+organisationsCurrencies.find((currency) => {
+  if (currency.length === currenciesCount) {
+    const index = organisationsCurrencies.indexOf(currency);
+    // console.log(
+    //   "Nazwę organizacji wykorzystującej największą liczbę walut,",
+    //   organisationsNames[index]
+    // );
+  }
+});
+
+organisationsCountries.forEach((org) => {
+  if (org <= maxCountries) maxCountries = org;
+});
+const maxCountriesIndex = organisationsCountries.indexOf(maxCountries);
+// console.log(
+//   "Nazwę organizacji posiadającej najmniejszą liczbę państw członkowskich",
+//   organisationsNames[maxCountriesIndex]
+// );
 
 console.log(countriesInUnionsObj);
+console.log(organisationsNames);
+console.log(organisationsCountries);
+
+// Natywną nazwę języka wykorzystywanego w największej liczbie krajów,
+const flatOrganizationsLanguages = organisationsLanguages.flat();
+console.log(flatOrganizationsLanguages);
+flatOrganizationsLanguages.find((language) => {
+  // console.log(language);
+  const [value] = Object.values(language);
+  // console.log(value);
+  if (value.name) countriesNames.push(value.name);
+});
+
+console.log(countriesNames);
+for (let f = 0; f <= countriesNames.length - 1; f++) {
+  console.log(countriesNames[f]);
+
+  if (countriesNames[f]) {
+  }
+}
+// Natywną nazwę języka wykorzystywanego przez najmniejszą liczbę ludzi,
+// Natywne nazwy języków wykorzystywanych na największym i najmniejszym obszarze.
+// W przypadku remisów wyświetl wszystkich zwycięzców.

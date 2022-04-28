@@ -14,12 +14,16 @@ describe("populationsHaveChanged", () => {
     {
       name: "Spain",
       population: 10000000,
+      area: 0,
+      regionalBlocs: [],
     },
   ];
   const unchangedPopulationNew: Country[] = [
     {
       name: "Spain",
       population: 10000000,
+      area: 0,
+      regionalBlocs: [],
     },
   ];
 
@@ -27,12 +31,16 @@ describe("populationsHaveChanged", () => {
     {
       name: "Ukraine",
       population: 10000000,
+      area: 0,
+      regionalBlocs: [],
     },
   ];
   const changedPopulationNew: Country[] = [
     {
       name: "Ukraine",
       population: 100000,
+      area: 0,
+      regionalBlocs: [],
     },
   ];
 

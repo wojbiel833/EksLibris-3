@@ -31,8 +31,11 @@ const setDateWithExpiry = function (key, value, ttl) {
 // 4) Przy starcie aplikacji sprawdź ile czasu minęło od poprzedniego ściągnięcia danych państw. Jeśli od ostatniego razu minęło co najmniej 7 dni, ściągnij i zapisz je ponownie.
 const getAndCheckDateWithExpiry = function (key) {
     const itemString = localStorage.getItem(key);
-    const dateExpiry = JSON.parse(itemString);
-    return (0, exports.checkIfDataExpired)(dateExpiry.expiry, now);
+    if (itemString) {
+        const dateExpiry = JSON.parse(itemString);
+        return (0, exports.checkIfDataExpired)(dateExpiry.expiry, now);
+    }
+    return (0, exports.checkIfDataExpired)(0, now);
 };
 const checkIfDataExpired = function (storageDateExpiryTimestamp, newDate) {
     const todaysTimestamp = newDate.getTime();
@@ -149,6 +152,7 @@ const getCountriesFrom = function (countries, from = "EU") {
                 if (blocs.find((union) => union.acronym === from))
                     countriesEU.push(country);
             }
+            return false;
         });
     }
     else {
@@ -159,7 +163,7 @@ const getCountriesFrom = function (countries, from = "EU") {
 exports.getCountriesFrom = getCountriesFrom;
 const countriesEUOutput = (0, exports.getCountriesFrom)(countriesLS);
 // Z uzyskanej w ten sposób tablicy usuń wszystkie państwa posiadające w swojej nazwie literę a.
-const getCountriesWithoutLetter = (countries, letter = "a") => countries.filter((country) => !country.name.includes(letter));
+const getCountriesWithoutLetter = (countries, letter = "a") => countries === null || countries === void 0 ? void 0 : countries.filter((country) => !country.name.includes(letter));
 exports.getCountriesWithoutLetter = getCountriesWithoutLetter;
 const countriesWitroutA = (0, exports.getCountriesWithoutLetter)(countriesEUOutput);
 // Z uzyskanej w ten sposób tablicy posortuj państwa według populacji, tak by najgęściej zaludnione znajdowały się na górze listy.
@@ -168,7 +172,7 @@ const setKey = function (country, key) {
 };
 const sortCountriesByKey = (countries, key = "population") => {
     const populations = [];
-    countries.forEach((country) => {
+    countries === null || countries === void 0 ? void 0 : countries.forEach((country) => {
         const data = setKey(country, key);
         populations.push(data);
     });
@@ -201,8 +205,6 @@ exports.sumTheBiggestPopulations = sumTheBiggestPopulations;
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
-// Jeśli kraj nie należy do żadnej z podanych wcześniej organizacji wykonaj kroki z poprzednich dwóch punktów, ale dane umieść w tablicy other.
-// Jeśli kraj należy do więcej, niż jednej organizacji, umieść jego dane we wszystkich pasujących obiektach bloków. Blok other może się powtarzać.
 // Dla każdej organizacji dane w tablicy currencies nie mogą się powtarzać.
 // Dla każdej organizacji dane w tablicy countries powinny być posortowane alfabetycznie z do a.
 // Wyświetl w konsoli:
@@ -244,55 +246,99 @@ const countriesInUnionsObj = {
     },
 };
 // W TP znajdź kraje należące do EU, NAFTA albo AU. Jeśli państwo należy do którejś z tych grup, umieść jego dane w stosownym obiekcie:
-const cloneTP = (0, lodash_1.cloneDeep)(countriesLS);
-// console.log(cloneTP);
+const clonedTP = (0, lodash_1.cloneDeep)(countriesLS);
+// console.log(clonedTP);
 const EUCountries = (0, exports.getCountriesFrom)(countriesLS, "EU");
 // console.log(EUCountries);
 const NAFTACountries = (0, exports.getCountriesFrom)(countriesLS, "NAFTA");
 // console.log(NAFTACountries);
 const AUCountries = (0, exports.getCountriesFrom)(countriesLS, "AU");
 // console.log(AUCountries);
-const others = [];
-// console.log(others);
+const usedCountries = [];
+// console.log(usedCountries);
+class languageObj {
+    constructor(name, population, area) {
+        this.name = name;
+        this.population = population;
+        this.area = area;
+    }
+}
 const assingValuesToObj = function (countries, countryKey, newObj, newObjKey) {
-    const countryInUnion = setKey(newObj, newObjKey);
-    countries.forEach((country, i) => {
-        var _a, _b;
-        // natywną nazwę w tablicy countries,
-        (_a = countryInUnion.countries) === null || _a === void 0 ? void 0 : _a.push(country.name);
-        others.push(country.name);
-        // używane przez nią waluty w tablicy currencies
-        (_b = country.currencies) === null || _b === void 0 ? void 0 : _b.forEach((currency) => {
-            var _a;
-            (_a = countryInUnion.currencies) === null || _a === void 0 ? void 0 : _a.push(currency);
-        });
-        // dodaj jej populację do wartości population.
-        countryInUnion.population += country.population;
-        // Sprawdź języki przypisane do kraju.
-        // console.log(country.languages);
-        // Użyj ich kodu iso639_1 jako klucza dla obiektu languages.
-        country.languages.forEach((lng) => {
-            console.log(lng);
-            // lng.forEach((l) => console.log(l));
-        });
-        // Jeśli danego języka nie ma w obiekcie languages, przypisz do niego nowy obiekt o kluczach countries (wartość początkowa: pusta arajka), population (0), area (0) oraz name (pusty string).
-        // Jeśli dany język znajduje się w obiekcie languages, dodaj do tablicy countries kod alpha3code kraju, w którym jest używany, populację tego kraju do wartości population, obszar kraju do wartości area, a do name przypisz natywną nazwę tego języka.
-        //  uwarunkuj others
-        if (newObjKey !== "others") {
-            for (let i = 0; i < cloneTP.length; i++) {
-                for (let j = 0; j < others.length; j++) {
-                    if (cloneTP[i].name === others[j])
-                        cloneTP.splice(i, 1);
+    const organization = setKey(newObj, newObjKey);
+    const truthArr = []; // XD
+    if (countries) {
+        countries.forEach((country, i, countries) => {
+            var _a, _b, _c;
+            const newLanguageObj = new languageObj(countries[i].name, countries[i].population, countries[i].area);
+            // natywną nazwę w tablicy countries,
+            (_a = organization.countries) === null || _a === void 0 ? void 0 : _a.push(country.name);
+            // zachowaj nazwy kazdego uzytego pañstwa
+            usedCountries.push(country.name);
+            // używane przez nią waluty w tablicy currencies
+            (_b = country.currencies) === null || _b === void 0 ? void 0 : _b.forEach((currency) => {
+                var _a;
+                (_a = organization.currencies) === null || _a === void 0 ? void 0 : _a.push(currency);
+            });
+            // dodaj jej populację do wartości population.
+            organization.population += country.population;
+            // Sprawdź języki przypisane do kraju i użyj ich kodu iso639_1 jako klucza dla obiektu languages.
+            country.languages.forEach((language) => {
+                var _a;
+                const lng = language.iso639_1;
+                if (lng) {
+                    const emptyObj = new languageObj("", 0, 0);
+                    const keyValuePair = { [lng]: emptyObj };
+                    (_a = organization.languages) === null || _a === void 0 ? void 0 : _a.push(keyValuePair);
+                }
+            });
+            //  uwarunkuj scernariusz dla klucza others
+            if (newObjKey !== "others") {
+                for (let i = 0; i < clonedTP.length; i++) {
+                    for (let j = 0; j < usedCountries.length; j++) {
+                        if (clonedTP[i].name === usedCountries[j])
+                            clonedTP.splice(i, 1);
+                    }
                 }
             }
-        }
-    });
-    countryInUnion.currencies = (0, lodash_1.uniqBy)(countryInUnion.currencies, "code");
+            // Jeśli dany język znajduje się w obiekcie languages, dodaj do tablicy countries kod alpha3code kraju, w którym jest używany, populację tego kraju do wartości population, obszar kraju do wartości area, a do name przypisz natywną nazwę tego języka.
+            (_c = organization.languages) === null || _c === void 0 ? void 0 : _c.map((language) => {
+                const [value] = Object.values(language);
+                if (value.name === "") {
+                    for (let a = 0; a < countries.length; a++) {
+                        for (let b = 0; b < usedCountries.length; b++) {
+                            value.name = newLanguageObj.name;
+                            value.population = newLanguageObj.population++;
+                            value.area = newLanguageObj.area++;
+                        }
+                    }
+                }
+                // if (value.name === "") {
+                //   for (let a = 0; a < countries.length; a++) {
+                //     for (let b = 0; b < usedCountries.length; b++) {}
+                //   }
+                // }
+            });
+        });
+    }
+    // Jeśli kraj należy do więcej, niż jednej organizacji, umieść jego dane we wszystkich pasujących obiektach bloków. Blok other może się powtarzać.
+    // const findCountryInOrganization = organization.countries?.some(
+    //   (country, i, countries) => {
+    //     // console.log(country);
+    //     // console.log(countries[i]);
+    //     console.log(countries);
+    //     return countries[i] === "Peru";
+    //   }
+    // );
+    // console.log(findCountryInOrganization);
+    // if (findCountryInOrganization) {
+    //   truthArr.push(findCountryInOrganization);
+    // }
+    // console.log(truthArr.length);
+    // organization.currencies = uniqBy(organization.currencies, "code");
 };
 assingValuesToObj(EUCountries, "currencies", countriesInUnionsObj, "EU");
 assingValuesToObj(NAFTACountries, "currencies", countriesInUnionsObj, "NAFTA");
 assingValuesToObj(AUCountries, "currencies", countriesInUnionsObj, "AU");
-assingValuesToObj(cloneTP, "currencies", countriesInUnionsObj, "others");
-// console.log(cloneTP);
-// console.log(countriesInUnionsObj.EU);
+// Jeśli kraj nie należy do żadnej z podanych wcześniej organizacji wykonaj kroki z poprzednich dwóch punktów, ale dane umieść w tablicy other. (LANGUAGES)
+assingValuesToObj(clonedTP, "currencies", countriesInUnionsObj, "others");
 console.log(countriesInUnionsObj);
